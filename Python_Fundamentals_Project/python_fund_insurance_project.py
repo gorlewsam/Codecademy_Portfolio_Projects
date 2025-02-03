@@ -2,7 +2,7 @@ import csv
 
 #Importing insurance data
 insurance_data = []
-with open("/home/samorc/anaconda3/envs/codecademy/portfolio_insurance_project_starter_files/python-portfolio-project-starter-files/insurance.csv") as insurance_info:
+with open("portfolio_insurance_project_starter_files/python-portfolio-project-starter-files/insurance.csv") as insurance_info:
     insurance_reader = csv.DictReader(insurance_info)
     for row in insurance_reader:
         insurance_data.append(row)

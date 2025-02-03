@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-df = pd.read_csv('/home/samorc/anaconda3/envs/codecademy/portfolio_data_vis_project_starter_files/Life-Expectancy-and-GDP-Starter/all_data.csv')
+df = pd.read_csv('portfolio_data_vis_project_starter_files/Life-Expectancy-and-GDP-Starter/all_data.csv')
 print(df.head())
 df = df.rename(columns={"Life expectancy at birth (years)":"LEABY"})
 print(df.head())
