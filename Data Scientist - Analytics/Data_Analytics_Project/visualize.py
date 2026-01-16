@@ -1,27 +1,35 @@
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from analyst_proj_funs import col_LC_nonLC_median
+from analyst_proj_funs import remove_outliers
 
 lc_data = pd.read_csv('clean_df.csv')
 print(lc_data.head(10))
 print(lc_data.columns)
 
-# Asking: what proportion of patients have lung cancer in this dataset?
-non_lc_patients = lc_data.loc[lc_data.label == 0]
-lc_patients = lc_data.loc[lc_data.label == 1]
-prop_non_lc = len(non_lc_patients) / len(lc_data)
-prop_lc = len(lc_patients) / len(lc_data)
-print('{:.1%} of patients in this dataset have lung cancer, and {:.1%} do not.'.format(prop_lc, prop_non_lc), "\n")
-
 
 # Investigating NHIS tobacco smoking status for LC and non-LC patients
-ax = sns.countplot(x='label', hue='Tobacco smoking status NHIS', data=lc_data)
-plt.xlabel('Lung Cancer Status')
-ax.set_xticks(range(0,2))
-ax.set_xticklabels(['Non-LC', 'LC'])
-plt.title('Smoking Status of Patients With and Without Lung Cancer')
+smoke_never = lc_data.loc[(lc_data['Tobacco smoking status NHIS'] == 'never') & (lc_data['label'] == 0)]
+smoke_former = lc_data.loc[(lc_data['Tobacco smoking status NHIS'] == 'former') & (lc_data['label'] == 0)]
+smoke_data = [len(smoke_never), len(smoke_former)]
+smoke_cats = ['Never', 'Former']
+
+plt.figure(figsize=(12,8))
+plt.subplot(1, 2, 1)
+plt.pie(smoke_data, autopct='%0.1f%%', pctdistance=1.2)
+plt.legend(smoke_cats)
+plt.title('Smoking Status of Patients Without Lung Cancer')
+plt.axis('Equal')
+
+smoke_never_lc = lc_data.loc[(lc_data['Tobacco smoking status NHIS'] == 'never') & (lc_data['label'] == 1)]
+smoke_former_lc = lc_data.loc[(lc_data['Tobacco smoking status NHIS'] == 'former') & (lc_data['label'] == 1)]
+smoke_data_lc = [len(smoke_never_lc), len(smoke_former_lc)]
+
+plt.subplot(1, 2, 2)
+plt.pie(smoke_data_lc, autopct='%0.1f%%', pctdistance=1.2)
+plt.legend(smoke_cats)
+plt.title('Smoking Status of Patients With Lung Cancer')
+plt.axis('Equal')
 plt.show()
 plt.close()
 
@@ -29,15 +37,24 @@ plt.close()
 # Investigating age distribution of patients with and without lung cancer
 # Adding age group to the dataframe
 lc_data_copy = lc_data.copy(deep=True)
+
 bins = [30, 40, 50, 60, 70, 80, 90]                                                     # Age group limits
 labels = ['30 to 39', '40 to 49', '50 to 59', '60 to 69', '70 to 79', '80 and Older']   # Age group labels
 lc_data_copy['age_group'] = pd.cut(lc_data_copy.age, bins=bins, labels=labels)
 
 sns.countplot(lc_data_copy, x='age_group', hue='label')
 plt.legend(['Non-LC', 'LC'])
-plt.title('Age Distribution of Patients With and Without Lung Cancer')
+plt.title('Ages of Patients With and Without Lung Cancer')
 plt.xlabel('Age Group')
 plt.ylabel('Patient Count')
+plt.show()
+plt.close()
+
+ax = sns.violinplot(x=lc_data['label'], y=lc_data['age'])
+plt.xlabel('Lung Cancer Status')
+ax.set_xticks(range(0,2))
+ax.set_xticklabels(['Non-LC', 'LC'])
+plt.title('Age Distribution of Patients With and Without Lung Cancer')
 plt.show()
 plt.close()
 
@@ -103,8 +120,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower platelet levels than non-LC patients?
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Platelets [#/volume] in Blood by Automated count'])
+# Asking: how does lung cancer patients' platelet count distribution compare to non-LC patients?
+platelet_df = remove_outliers(lc_data, 'Platelets [#/volume] in Blood by Automated count')
+
+ax = sns.violinplot(x=platelet_df['label'], y=platelet_df['Platelets [#/volume] in Blood by Automated count'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -113,8 +132,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower leukocyte levels than non-LC patients?
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Leukocytes [#/volume] in Blood by Automated count'])
+# Asking: how does lung cancer patients' leukocyte count distribution compare to non-LC patients?
+leuk_df = remove_outliers(lc_data, 'Leukocytes [#/volume] in Blood by Automated count')
+
+ax = sns.violinplot(x=leuk_df['label'], y=leuk_df['Leukocytes [#/volume] in Blood by Automated count'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -123,9 +144,11 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower RDW levels than non-LC patients?
+# Asking: how does lung cancer patients' RDW distribution compare to non-LC patients?
+rdw_df = remove_outliers(lc_data, 'Erythrocyte distribution width [Entitic volume] by Automated count')
+
 plt.figure(figsize=(10,8))
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Erythrocyte distribution width [Entitic volume] by Automated count'])
+ax = sns.violinplot(x=rdw_df['label'], y=rdw_df['Erythrocyte distribution width [Entitic volume] by Automated count'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -134,8 +157,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower hemoglobin levels than non-LC patients?
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Hemoglobin [Mass/volume] in Blood'])
+# Asking: how does lung cancer patients' hemoglobin level distribution compare to non-LC patients?
+hemoglobin_df = remove_outliers(lc_data, 'Hemoglobin [Mass/volume] in Blood')
+
+ax = sns.violinplot(x=hemoglobin_df['label'], y=hemoglobin_df['Hemoglobin [Mass/volume] in Blood'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -144,8 +169,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower carbon dioxide levels than non-LC patients?
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Carbon Dioxide'])
+# Asking: how does lung cancer patients' carbon dioxide level distribution compare to non-LC patients?
+co2_df = remove_outliers(lc_data, 'Carbon Dioxide')
+
+ax = sns.violinplot(x=co2_df['label'], y=co2_df['Carbon Dioxide'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -154,15 +181,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower bilirubin levels than non-LC patients?
-# Anomalous outliers for non-LC patients that don't make logical sense, need to filter extreme outliers
-bilirubin = lc_data['Bilirubin.total [Mass/volume] in Serum or Plasma'].to_numpy()
-q1 = np.nanquantile(bilirubin, 0.25)
-q3 = np.nanquantile(bilirubin, 0.75)
-iqr = q3 - q1
-lc_data.loc[(lc_data['Bilirubin.total [Mass/volume] in Serum or Plasma']>q3+1.5*iqr),'Bilirubin.total [Mass/volume] in Serum or Plasma']=np.nan
-lc_data.loc[(lc_data['Bilirubin.total [Mass/volume] in Serum or Plasma']<q1-1.5*iqr),'Bilirubin.total [Mass/volume] in Serum or Plasma']=np.nan
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Bilirubin.total [Mass/volume] in Serum or Plasma'])
+# Asking: how does lung cancer patients' bilirubin level distribution compare to non-LC patients?
+bilirubin_df = remove_outliers(lc_data, 'Bilirubin.total [Mass/volume] in Serum or Plasma')
+
+ax = sns.violinplot(x=bilirubin_df['label'], y=bilirubin_df['Bilirubin.total [Mass/volume] in Serum or Plasma'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -172,8 +194,10 @@ plt.show()
 plt.close()
 
 
-# Asking: do lung cancer patients have higher or lower albumin levels than non-LC patients?
-ax = sns.violinplot(x=lc_data['label'], y=lc_data['Albumin'])
+# Asking: how does lung cancer patients' albumin level distribution compare to non-LC patients?
+albumin_df = remove_outliers(lc_data, 'Albumin')
+
+ax = sns.violinplot(x=albumin_df['label'], y=albumin_df['Albumin'])
 plt.xlabel('Lung Cancer Status')
 ax.set_xticks(range(0,2))
 ax.set_xticklabels(['Non-LC', 'LC'])
@@ -182,10 +206,11 @@ plt.show()
 plt.close()
 
 
-# Chronic viral sinusitis has been previously correlated with lung cancer incidence
+# Chronic viral sinusitis has been previously correlated with lung cancer incidence,
+# actue, viral sinusitis can cause chronic sinusitis
 # Asking: what proportions of LC and non-LC patients have had viral sinusitis?
-vs_pos = lc_data.loc[(lc_data['Viral sinusitis (disorder)'] == True) & (lc_data['label'] == 0)]
-vs_neg = lc_data.loc[(lc_data['Viral sinusitis (disorder)'] == False) & (lc_data['label'] == 0)]
+vs_pos = lc_data['Viral sinusitis (disorder)'].loc[(lc_data['Viral sinusitis (disorder)'] == True) & (lc_data['label'] == 0)]
+vs_neg = lc_data['Viral sinusitis (disorder)'].loc[(lc_data['Viral sinusitis (disorder)'] == False) & (lc_data['label'] == 0)]
 vs_data = [len(vs_pos), len(vs_neg)]
 vs_cats = ['Positive', 'Negative']
 
@@ -196,8 +221,8 @@ plt.legend(vs_cats)
 plt.title('Viral Sinusitis Status of Patients Without Lung Cancer')
 plt.axis('Equal')
 
-vs_pos_lc = lc_data.loc[(lc_data['Viral sinusitis (disorder)'] == True) & (lc_data['label'] == 1)]
-vs_neg_lc = lc_data.loc[(lc_data['Viral sinusitis (disorder)'] == False) & (lc_data['label'] == 1)]
+vs_pos_lc = lc_data['Viral sinusitis (disorder)'].loc[(lc_data['Viral sinusitis (disorder)'] == True) & (lc_data['label'] == 1)]
+vs_neg_lc = lc_data['Viral sinusitis (disorder)'].loc[(lc_data['Viral sinusitis (disorder)'] == False) & (lc_data['label'] == 1)]
 vs_data_lc = [len(vs_pos_lc), len(vs_neg_lc)]
 
 plt.subplot(1, 2, 2)
@@ -207,26 +232,3 @@ plt.title('Viral Sinusitis Status of Patients With Lung Cancer')
 plt.axis('Equal')
 plt.show()
 plt.close()
-
-
-# Looking at blood counts to investigate associations with lung cancer, excluding NaNs
-print("Median Platelet Counts for LC and non-LC Patients:", 
-      col_LC_nonLC_median(lc_data, 'Platelets [#/volume] in Blood by Automated count'))
-
-print("Median Leukocyte Counts for LC and non-LC Patients:",
-      col_LC_nonLC_median(lc_data, 'Leukocytes [#/volume] in Blood by Automated count'))
-
-print("Median Erythrocyte Distribution Width for LC and non-LC Patients:",
-      col_LC_nonLC_median(lc_data, 'Erythrocyte distribution width [Entitic volume] by Automated count'))
-
-print("Median Hemoglobin Levels for LC and non-LC Patients:",
-      col_LC_nonLC_median(lc_data, 'Hemoglobin [Mass/volume] in Blood'))
-
-print("Median Carbon Dioxide Levels for LC and non-LC Patients:", 
-      col_LC_nonLC_median(lc_data, 'Carbon Dioxide'))
-
-print("Median Bilirubin Levels for LC and non-LC Patients, With Outliers Filtered:", 
-      col_LC_nonLC_median(lc_data, 'Bilirubin.total [Mass/volume] in Serum or Plasma'))
-
-print("Median Albumin Levels for LC and non-LC Patients:", 
-      col_LC_nonLC_median(lc_data, 'Albumin'))

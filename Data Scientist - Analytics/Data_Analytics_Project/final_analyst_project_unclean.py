@@ -11,7 +11,7 @@ lc_data4 = pd.read_csv('synthea-pt30k3-lc-data-sel.csv', low_memory=False)
 lc_data5 = pd.read_csv('synthea-pt30k4-lc-data-sel.csv', low_memory=False)
 
 frames = [lc_data1, lc_data2, lc_data3, lc_data4, lc_data5]
-lc_df = pd.concat(frames)
+lc_df = pd.concat(frames, ignore_index=True)
 print(lc_df.head(10), "\n")
 print(lc_df.shape, "\n")
 
